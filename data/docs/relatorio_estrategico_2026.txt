@@ -1,0 +1,121 @@
+================================================================================
+APEXCLOUD ENTERPRISE SOLUTIONS S.A.
+RELATÓRIO ESTRATÉGICO CORPORATIVO, DIRETRIZES COMERCIAIS E DESEMPENHO YTD 2026
+Documento ID: REL-ESTRAT-2026-Q3 | Classificação: Confidencial Interno
+Última Revisão: Outubro de 2026 | Responsável: Diretoria Executiva & FP&A
+================================================================================
+
+1. SUMÁRIO EXECUTIVO E VISÃO ESTRATÉGICA 2026
+--------------------------------------------------------------------------------
+A ApexCloud Enterprise Solutions consolidou em 2026 sua liderança como provedora
+de plataforma de inteligência artificial generativa corporativa, modernização em nuvem
+e governança analítica para o segmento B2B enterprise na América Latina.
+
+Principais destaques acumulados de Janeiro a Outubro de 2026:
+- Faturamento Bruto Acumulado: R$ 14.465.000,00 (107,8% do target orçado).
+- Meta Anual Revisada para o Ano Fiscal: R$ 18.500.000,00.
+- Carteira de Clientes Ativos: 566 clientes corporativos.
+- Churn Rate Médio Mensal: 1,18%, patamar significativamente inferior ao benchmark
+  do setor de software corporativo (2,10%).
+- Net Revenue Retention (NRR): 128,4%, impulsionado pelo módulo corporativo de RAG
+  (Retrieval-Augmented Generation) integrado ao Amazon Bedrock.
+
+2. METAS ESTRATÉGICAS E OKRS CORPORATIVOS (ANO FISCAL 2026)
+--------------------------------------------------------------------------------
+- OKR 1 - Expansão de Receita Recorrente:
+  Atingir faturamento anual superior a R$ 18,5 milhões com margem EBITDA mínima de 28%.
+- OKR 2 - Eficiência de Aquisição:
+  Reduzir o Custo de Aquisição de Clientes (CAC) médio para patamar abaixo de R$ 4.200,00
+  até o encerramento do Q4 2026. Em Outubro de 2026, atingiu R$ 4.120,00.
+- OKR 3 - Retenção e Longevidade (LTV):
+  Elevar o Lifetime Value (LTV) médio ponderado para acima de R$ 150.000,00 por conta
+  Enterprise. Em Outubro de 2026, o indicador atingiu R$ 152.000,00, gerando um ratio
+  LTV/CAC de 36,8x.
+- OKR 4 - Adoção da Plataforma de IA Generativa:
+  Garantir que 70% dos novos contratos corporativos incluam o add-on de RAG corporativo
+  e BI conversacional.
+
+3. CATÁLOGO DE PRODUTOS E MODELOS DE PRECIFICAÇÃO
+--------------------------------------------------------------------------------
+A oferta comercial da ApexCloud é baseada em três modalidades de contratação:
+
+3.1. ApexCloud Professional Tier
+- Foco: Empresas de médio porte com até 500 colaboradores.
+- Valor Base: R$ 12.500,00 / mês (faturamento anual contratado de R$ 150.000,00).
+- Recursos: Pipelines de dados automatizados, até 10 conexões de banco de dados,
+  suporte em horário comercial (8x5) com SLA de resposta em até 4 horas úteis.
+
+3.2. ApexCloud Enterprise Tier
+- Foco: Grandes corporações e instituições financeiras.
+- Valor Base: R$ 28.000,00 / mês (faturamento anual contratado de R$ 336.000,00).
+- Recursos: Conectores ilimitados, arquitetura multi-região AWS, criptografia dedicada
+  em repouso via KMS, suporte 24x7 com SLA de resposta de 30 minutos para severidade 1.
+
+3.3. Add-on GenAI & Bedrock RAG Enterprise
+- Foco: Camada de busca semântica, vetorização S3 Vectors e agentes inteligentes.
+- Valor Adicional: R$ 8.500,00 / mês quando acoplado ao plano Enterprise.
+- Inclui: Knowledge Base privativa no Amazon Bedrock, indexação contínua de documentos,
+  guardrails corporativos para compliance LGPD/GDPR e integração com modelos Amazon Nova
+  e Anthropic Claude.
+
+4. POLÍTICA OFICIAL DE DESCONTOS E ALÇADAS DE APROVAÇÃO
+--------------------------------------------------------------------------------
+Para assegurar a disciplina financeira e proteger a rentabilidade operacional da companhia,
+ficam estabelecidas as seguintes regras obrigatórias de concessão de descontos sobre a tabela oficial:
+
+4.1. Alçadas de Aprovação por Faixa de Desconto:
+- Desconto de até 10% (inclusive):
+  Pode ser concedido diretamente pelo Executivo de Contas (Account Executive - AE),
+  desde que o contrato seja anual (mínimo 12 meses) e com pagamento antecipado anual
+  ou semestral.
+- Desconto de 10,1% até 15,0%:
+  Exige aprovação formal por escrito do Gerente Comercial Regional via sistema CRM.
+- Desconto de 15,1% até 20,0%:
+  Exige validação e aprovação do Diretor Comercial (Head of Sales). Necessário
+  apresentar contrapartida de compromisso contratual de no mínimo 24 meses (bi-anual).
+- Desconto acima de 20,0%:
+  Exceção de alto impacto que exige aprovação unânime do Comitê Executivo:
+  Diretor Financeiro (CFO) e Vice-Presidente de Operações (VP of Ops). Permitido apenas
+  em licitações estratégicas ou contas "Tier Global Top 50" com compromisso multianual
+  de 36 meses.
+
+4.2. Vedações e Restrições Absolutas:
+- É terminantemente proibido conceder descontos retroativos em faturas já emitidas.
+- É vedada a aplicação de descontos em contratos mensais sem fidelidade (spot contracts).
+- Não é permitida a concessão cumulativa de desconto de tabela com bonificação de
+  serviços de implementação ou consultoria técnica ("waived onboarding fees") sem
+  autorização expressa da Diretoria Financeira.
+
+5. DIRETRIZES DE CANCELAMENTO, CHURN E MULTAS RESCISÓRIAS
+--------------------------------------------------------------------------------
+5.1. Aviso Prévio:
+- Qualquer solicitação de rescisão sem justa causa deve ser notificada com antecedência
+  mínima de 60 (sessenta) dias corridos por meio de canal oficial (notificacao@apexcloud.com).
+
+5.2. Multa Rescisória:
+- Em contratos anuais ou plurianuais rescindidos antecipadamente pelo cliente sem infração
+  comprovada de SLA por parte da ApexCloud, aplica-se multa de 40% sobre o saldo remanescente
+  do valor total contratado.
+
+5.3. Processo de Retenção e Offboarding:
+- Notificação de cancelamento aciona imediatamente a célula de Customer Retention para
+  tentativa de renegociação dentro do prazo regulamentar de 15 dias úteis.
+- Havendo confirmação da saída, todos os dados, embeddings vetoriais e arquivos armazenados
+  no Amazon S3 e S3 Vectors são sanitizados de acordo com a norma NIST SP 800-88 Rev. 1
+  em até 30 dias após o encerramento do contrato.
+
+6. DIRETRIZES DE ATENDIMENTO E SLAS CONTRATUAIS
+--------------------------------------------------------------------------------
+- Severidade 1 (Incidente Crítico - Sistema Indisponível):
+  Tempo de primeira resposta: até 15 minutos (Enterprise 24x7).
+  Tempo de resolução / contorno: até 4 horas.
+- Severidade 2 (Incidente Alto - Degradação Parcial de Funcionalidade):
+  Tempo de primeira resposta: até 1 hora.
+  Tempo de resolução: até 8 horas.
+- Severidade 3 (Dúvida Operacional ou Melhoria):
+  Tempo de resposta: até 4 horas úteis.
+
+================================================================================
+FIM DO DOCUMENTO REL-ESTRAT-2026-Q3
+================================================================================
+

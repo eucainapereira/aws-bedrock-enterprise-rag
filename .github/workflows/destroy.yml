@@ -1,0 +1,64 @@
+name: "Destroy Enterprise Infrastructure"
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_destroy:
+        description: "Digite 'DESTROY' para confirmar a destruição de toda a infraestrutura AWS"
+        required: true
+        default: ""
+
+permissions:
+  id-token: write   # Required for AWS OIDC authentication
+  contents: read    # Required to checkout the repository
+
+jobs:
+  destroy:
+    name: "Terraform Destroy"
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Validate Confirmation Input
+        run: |
+          if [ "${{ github.event.inputs.confirm_destroy }}" != "DESTROY" ]; then
+            echo "❌ Confirmação inválida. Digite exatamente 'DESTROY' para prosseguir."
+            exit 1
+          fi
+          echo "Confirmação validada com sucesso. Iniciando processo de teardown..."
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+          audience: sts.amazonaws.com
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init
+
+      - name: Terraform Destroy
+        run: |
+          cd terraform
+          echo "Iniciando destruição completa dos recursos provisionados..."
+          terraform destroy -auto-approve
+
+      - name: Teardown Summary
+        run: |
+          echo "### 🗑️ Teardown Concluído com Sucesso!" >> $GITHUB_STEP_SUMMARY
+          echo "Todos os recursos do projeto \`aws-bedrock-enterprise-rag\` foram destruídos no AWS Account \`710280692169\` (us-east-2)." >> $GITHUB_STEP_SUMMARY
+

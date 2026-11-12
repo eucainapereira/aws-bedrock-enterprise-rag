@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ApexCloud | Enterprise RAG & BI KPI Dashboard</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+            },
+            accent: {
+              500: '#06b6d4',
+              600: '#0891b2',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Dynamic Runtime Configuration injected via deploy pipeline -->
+  <script src="config.js" onerror="console.warn('config.js não encontrado. O endpoint pode ser informado manualmente.');"></script>
+
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-emerald-500/30 selection:text-emerald-200">
+
+  <!-- TOP APP BAR -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-xl sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 p-0.5 shadow-lg shadow-emerald-500/20">
+          <div class="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+            <i data-lucide="sparkles" class="w-5 h-5 text-emerald-400"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-base font-bold tracking-tight text-white">ApexCloud Enterprise</h1>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              AWS Bedrock RAG
+            </span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+              S3 Vectors
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Executive BI & Conversational Intelligence Engine</p>
+        </div>
+      </div>
+
+      <!-- Right Controls: Status & Endpoint -->
+      <div class="flex items-center space-x-3">
+        <!-- Live Connection Status Pill -->
+        <div id="status-pill" class="flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800/80 border border-slate-700/60 text-slate-300">
+          <span id="status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="status-text">Conectando...</span>
+        </div>
+
+        <!-- Refresh Button -->
+        <button id="btn-refresh" onclick="fetchKpis()" class="p-2 rounded-lg bg-slate-800/70 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white transition flex items-center" title="Atualizar dados">
+          <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
+        </button>
+
+        <!-- Settings Button to edit API URL -->
+        <button onclick="toggleEndpointModal()" class="p-2 rounded-lg bg-slate-800/70 hover:bg-slate-700 border border-slate-700/60 text-slate-300 hover:text-white transition" title="Configurações de Conexão">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ENDPOINT CONFIG MODAL (for manual override or local test) -->
+  <div id="endpoint-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+          <i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>
+          <span>Endpoint do API Gateway</span>
+        </h3>
+        <button onclick="toggleEndpointModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <p class="text-xs text-slate-400 leading-relaxed">
+        O endpoint é configurado automaticamente via <code class="text-emerald-400 bg-slate-800 px-1 py-0.5 rounded">config.js</code> durante o pipeline do Terraform. Você também pode inseri-lo manualmente abaixo:
+      </p>
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1">URL Base do API Gateway (HTTP API v2)</label>
+        <input id="custom-api-input" type="url" placeholder="https://xxxxxxxxxx.execute-api.us-east-2.amazonaws.com"
+          class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="toggleEndpointModal()" class="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700">Cancelar</button>
+        <button onclick="saveCustomEndpoint()" class="px-4 py-2 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30">Salvar e Conectar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN WRAPPER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- HERO / BANNER -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-800/50 p-6 rounded-2xl border border-slate-800 shadow-xl">
+      <div class="space-y-1">
+        <div class="flex items-center space-x-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <p class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Painel Executivo 2026</p>
+        </div>
+        <h2 class="text-2xl font-extrabold text-white tracking-tight">Performance Financeira & Governança Estratégica</h2>
+        <p class="text-sm text-slate-400 max-w-2xl">
+          Dados sincronizados em tempo real do Amazon S3 com IA conversacional alimentada pelo Amazon Bedrock e S3 Vectors.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="text-right">
+          <p class="text-xs text-slate-400">Região de Deploy</p>
+          <p class="text-sm font-semibold text-slate-200">us-east-2 (Ohio)</p>
+        </div>
+        <div class="h-8 w-px bg-slate-800"></div>
+        <div class="text-right">
+          <p class="text-xs text-slate-400">Modelo RAG Ativo</p>
+          <p class="text-sm font-semibold text-cyan-400">Nova Lite v1.0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- METRICS GRID: 4 EXECUTIVE CARDS -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" id="kpi-cards-grid">
+      <!-- Card 1: Faturamento -->
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700/80 transition-all duration-300 shadow-lg relative overflow-hidden group">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-400">Faturamento Acumulado (YTD)</span>
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="space-y-1">
+          <h3 id="card-faturamento-val" class="text-2xl font-bold tracking-tight text-white">Carregando...</h3>
+          <div class="flex items-center space-x-2">
+            <span id="card-faturamento-badge" class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              ...
+            </span>
+            <span class="text-xs text-slate-400">vs. target anual</span>
+          </div>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-emerald-400 opacity-60"></div>
+      </div>
+
+      <!-- Card 2: Ticket Médio -->
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700/80 transition-all duration-300 shadow-lg relative overflow-hidden group">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-400">Ticket Médio Enterprise</span>
+          <div class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="space-y-1">
+          <h3 id="card-ticket-val" class="text-2xl font-bold tracking-tight text-white">Carregando...</h3>
+          <div class="flex items-center space-x-2">
+            <span id="card-ticket-badge" class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              +12.4% YoY
+            </span>
+            <span class="text-xs text-slate-400">por conta B2B</span>
+          </div>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-cyan-400 opacity-60"></div>
+      </div>
+
+      <!-- Card 3: Novos Clientes -->
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700/80 transition-all duration-300 shadow-lg relative overflow-hidden group">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-400">Novos Clientes Adquiridos</span>
+          <div class="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+            <i data-lucide="users" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="space-y-1">
+          <h3 id="card-clientes-val" class="text-2xl font-bold tracking-tight text-white">Carregando...</h3>
+          <div class="flex items-center space-x-2">
+            <span id="card-clientes-badge" class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              Q3 Recorde
+            </span>
+            <span class="text-xs text-slate-400">Jan-Out 2026</span>
+          </div>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-purple-400 opacity-60"></div>
+      </div>
+
+      <!-- Card 4: Churn Rate -->
+      <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 hover:border-slate-700/80 transition-all duration-300 shadow-lg relative overflow-hidden group">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-medium text-slate-400">Churn Rate Médio</span>
+          <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="space-y-1">
+          <h3 id="card-churn-val" class="text-2xl font-bold tracking-tight text-white">Carregando...</h3>
+          <div class="flex items-center space-x-2">
+            <span id="card-churn-badge" class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              Benchmark 2.1%
+            </span>
+            <span class="text-xs text-slate-400">retenção de excelência</span>
+          </div>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-amber-400 opacity-60"></div>
+      </div>
+    </section>
+
+    <!-- MAIN TWO-COLUMN SECTION: BI ANALYTICS (LEFT) + BEDROCK RAG CHAT (RIGHT) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <!-- LEFT COLUMN: CHARTS & HISTORICAL DATA TABLE (7 COLS) -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- Revenue Chart Card -->
+        <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                <i data-lucide="bar-chart-3" class="w-5 h-5 text-emerald-400"></i>
+                <span>Evolução de Faturamento: Realizado vs. Meta (2026)</span>
+              </h3>
+              <p class="text-xs text-slate-400">Valores em milhões de R$ (BRL) computados a partir de <code class="text-slate-300">kpis/faturamento_2026.csv</code></p>
+            </div>
+            <span class="px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-800 text-slate-300 border border-slate-700">
+              YTD 2026
+            </span>
+          </div>
+
+          <!-- Canvas Container -->
+          <div class="h-72 w-full relative">
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Monthly Breakdown Table Card -->
+        <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+              <i data-lucide="table" class="w-5 h-5 text-cyan-400"></i>
+              <span>Demonstrativo Mensal Auditado</span>
+            </h3>
+            <span class="text-xs text-slate-400" id="table-period-label">Janeiro a Outubro de 2026</span>
+          </div>
+
+          <div class="overflow-x-auto max-h-60 overflow-y-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-950/80 sticky top-0 text-slate-400 uppercase font-semibold border-b border-slate-800">
+                <tr>
+                  <th class="py-2.5 px-3">Mês</th>
+                  <th class="py-2.5 px-3 text-right">Realizado (R$)</th>
+                  <th class="py-2.5 px-3 text-right">Meta (R$)</th>
+                  <th class="py-2.5 px-3 text-center">Atingimento</th>
+                  <th class="py-2.5 px-3 text-center">Novos</th>
+                  <th class="py-2.5 px-3 text-center">Churn</th>
+                </tr>
+              </thead>
+              <tbody id="table-rows" class="divide-y divide-slate-800/60 font-mono">
+                <!-- Dynamically populated -->
+                <tr>
+                  <td colspan="6" class="py-6 text-center text-slate-500 font-sans">Carregando dados estruturados...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: BEDROCK RAG INTELLIGENCE ASSISTANT (5 COLS) -->
+      <div class="lg:col-span-5">
+        <div class="bg-slate-900/90 border border-slate-800/90 rounded-2xl shadow-2xl flex flex-col h-[680px] sticky top-24">
+          
+          <!-- Chat Header -->
+          <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50 rounded-t-2xl">
+            <div class="flex items-center space-x-3">
+              <div class="relative">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                  <i data-lucide="bot" class="w-5 h-5 text-slate-950"></i>
+                </div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-slate-950"></span>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white flex items-center space-x-1.5">
+                  <span>ApexCloud AI Advisor</span>
+                  <span class="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.2 rounded">RAG</span>
+                </h3>
+                <p class="text-[11px] text-slate-400">Amazon Bedrock • Titan Embeddings • Nova Lite</p>
+              </div>
+            </div>
+
+            <button onclick="clearChat()" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800 transition" title="Limpar conversa">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Chat Prompt Suggestions Pills -->
+          <div class="px-4 py-2.5 border-b border-slate-800/60 bg-slate-900/40 flex items-center space-x-2 overflow-x-auto text-[11px]">
+            <span class="text-slate-400 whitespace-nowrap font-medium flex items-center space-x-1">
+              <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Sugestões:</span>
+            </span>
+            <button onclick="askPrompt('Qual a política de descontos e alçadas de aprovação?')"
+              class="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap border border-slate-700/60 transition">
+              📜 Política de Desconto
+            </button>
+            <button onclick="askPrompt('Qual o faturamento acumulado de 2026 e o melhor mês?')"
+              class="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap border border-slate-700/60 transition">
+              📊 Faturamento e Metas
+            </button>
+            <button onclick="askPrompt('Como funciona a multa de rescisão antecipada de contrato?')"
+              class="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap border border-slate-700/60 transition">
+              ⚖️ Rescisão Contratual
+            </button>
+          </div>
+
+          <!-- Messages Stream Container -->
+          <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4">
+            
+            <!-- Welcome Assistant Message -->
+            <div class="flex items-start space-x-3">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex-shrink-0 flex items-center justify-center text-emerald-400 mt-0.5">
+                <i data-lucide="bot" class="w-4 h-4"></i>
+              </div>
+              <div class="space-y-1 max-w-[85%]">
+                <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl rounded-tl-sm px-4 py-3 text-xs text-slate-200 leading-relaxed shadow">
+                  Olá! Sou o assistente corporativo de IA da <strong>ApexCloud</strong>. Posso analisar em profundidade os relatórios estratégicos, diretrizes comerciais, políticas de desconto e métricas financeiras de 2026 recuperados da Knowledge Base no Amazon Bedrock.
+                  <br><br>
+                  Como posso ajudar na sua tomada de decisão hoje?
+                </div>
+                <span class="text-[10px] text-slate-400 px-1">Bedrock RAG • S3 Vectors Knowledge Base</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Typing Indicator (Hidden by default) -->
+          <div id="chat-typing" class="hidden px-4 py-2 flex items-center space-x-2 text-xs text-slate-400">
+            <div class="w-2 h-2 rounded-full bg-cyan-400 animate-bounce"></div>
+            <div class="w-2 h-2 rounded-full bg-cyan-400 animate-bounce [animation-delay:0.2s]"></div>
+            <div class="w-2 h-2 rounded-full bg-cyan-400 animate-bounce [animation-delay:0.4s]"></div>
+            <span class="text-[11px] text-slate-400 ml-1">Consultando Amazon Bedrock & Base Vetorial...</span>
+          </div>
+
+          <!-- Chat Input Footer -->
+          <form id="chat-form" onsubmit="handleSendChat(event)" class="p-3 border-t border-slate-800 bg-slate-950/60 rounded-b-2xl">
+            <div class="relative flex items-center">
+              <input id="chat-input" type="text" placeholder="Pergunte sobre políticas, KPIs, metas ou contratos..."
+                class="w-full pl-3.5 pr-11 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition shadow-inner">
+              <button type="submit" id="btn-send"
+                class="absolute right-1.5 p-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 hover:opacity-90 transition font-semibold disabled:opacity-40"
+                title="Enviar Mensagem">
+                <i data-lucide="send" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <div class="flex items-center justify-between mt-2 px-1 text-[10px] text-slate-400">
+              <span>Pressione <kbd class="px-1 py-0.5 bg-slate-800 rounded text-slate-300">Enter</kbd> para enviar</span>
+              <span id="active-session-label">Sessão RAG Ativa</span>
+            </div>
+          </form>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800/80 bg-slate-950 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+      <p>© 2026 ApexCloud Enterprise Solutions S.A. Todos os direitos reservados.</p>
+      <div class="flex items-center space-x-4">
+        <span>Arquitetura Serverless AWS (Bedrock + S3 Vectors + Lambda + HTTP API)</span>
+        <span>•</span>
+        <span class="text-emerald-400 font-medium">FinOps Optimized (~$0.00 Idle Cost)</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- APPLICATION SCRIPT LOGIC -->
+  <script>
+    // Configuration & State
+    let apiBaseUrl = (window.APP_CONFIG && window.APP_CONFIG.apiEndpoint) || "";
+    let currentSessionId = null;
+    let chartInstance = null;
+
+    // Format BRL Currency
+    function formatBRL(val) {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    }
+
+    // Modal Toggles
+    function toggleEndpointModal() {
+      const modal = document.getElementById('endpoint-modal');
+      const input = document.getElementById('custom-api-input');
+      input.value = apiBaseUrl;
+      modal.classList.toggle('hidden');
+    }
+
+    function saveCustomEndpoint() {
+      const val = document.getElementById('custom-api-input').value.trim();
+      apiBaseUrl = val.replace(/\/+$/, '');
+      toggleEndpointModal();
+      fetchKpis();
+    }
+
+    // Update Status Pill
+    function setStatus(status, text) {
+      const pill = document.getElementById('status-pill');
+      const dot = document.getElementById('status-dot');
+      const label = document.getElementById('status-text');
+
+      label.textContent = text;
+      dot.className = "w-2 h-2 rounded-full";
+
+      if (status === 'online') {
+        dot.classList.add('bg-emerald-400');
+        pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-300";
+      } else if (status === 'error') {
+        dot.classList.add('bg-rose-400');
+        pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-rose-500/10 border border-rose-500/30 text-rose-300";
+      } else {
+        dot.classList.add('bg-amber-400', 'animate-pulse');
+        pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800/80 border border-slate-700/60 text-slate-300";
+      }
+    }
+
+    // Initialize or Update Chart.js
+    function renderChart(labels, revenue, target) {
+      const ctx = document.getElementById('revenueChart').getContext('2d');
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      // Convert to millions for clean readable axis
+      const revMillions = revenue.map(v => v / 1000000);
+      const targetMillions = target.map(v => v / 1000000);
+
+      chartInstance = new Chart(ctx, {
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Faturamento Realizado (Milhões R$)',
+              data: revMillions,
+              backgroundColor: 'rgba(16, 185, 129, 0.7)',
+              hoverBackgroundColor: 'rgba(16, 185, 129, 0.9)',
+              borderColor: '#10b981',
+              borderWidth: 1.5,
+              borderRadius: 6,
+              order: 2
+            },
+            {
+              type: 'line',
+              label: 'Meta Orçada (Milhões R$)',
+              data: targetMillions,
+              borderColor: '#06b6d4',
+              backgroundColor: 'rgba(6, 182, 212, 0.1)',
+              borderWidth: 2.5,
+              borderDash: [5, 5],
+              pointBackgroundColor: '#06b6d4',
+              pointRadius: 4,
+              fill: false,
+              tension: 0.2,
+              order: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: '#94a3b8',
+                font: { family: 'Inter', size: 11, weight: '500' },
+                boxWidth: 12,
+                boxHeight: 12,
+                borderRadius: 2
+              }
+            },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              titleColor: '#f8fafc',
+              bodyColor: '#cbd5e1',
+              borderColor: '#334155',
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw * 1000000;
+                  return ` ${context.dataset.label}: ${formatBRL(val)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(51, 65, 85, 0.3)' },
+              ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(51, 65, 85, 0.3)' },
+              ticks: {
+                color: '#94a3b8',
+                font: { family: 'Inter', size: 10 },
+                callback: function(val) { return 'R$ ' + val + 'M'; }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Fetch and Populate Table & Cards
+    async function fetchKpis() {
+      const icon = document.getElementById('refresh-icon');
+      if (icon) icon.classList.add('animate-spin');
+      setStatus('connecting', 'Atualizando KPIs...');
+
+      try {
+        let data;
+        if (apiBaseUrl) {
+          const resp = await fetch(`${apiBaseUrl}/kpis`);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          data = await resp.json();
+        } else {
+          // Fallback demo mock if no backend deployed yet
+          console.info("Using embedded initial demo dataset until backend URL is configured.");
+          data = getFallbackData();
+        }
+
+        const summary = data.summary;
+        const chart = data.chart_data;
+        const rows = data.rows;
+
+        // Populate Cards
+        document.getElementById('card-faturamento-val').textContent = formatBRL(summary.faturamento_total_brl);
+        document.getElementById('card-faturamento-badge').textContent = `${summary.atingimento_global_pct}% da Meta`;
+
+        document.getElementById('card-ticket-val').textContent = formatBRL(summary.ticket_medio_brl);
+        document.getElementById('card-clientes-val').textContent = summary.total_novos_clientes;
+        document.getElementById('card-churn-val').textContent = `${summary.churn_medio_pct}%`;
+
+        // Render Chart
+        renderChart(chart.labels, chart.faturamento, chart.meta);
+
+        // Populate Table
+        const tbody = document.getElementById('table-rows');
+        tbody.innerHTML = rows.map(r => `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="py-2.5 px-3 font-sans font-medium text-slate-200">${r.mes_nome}</td>
+            <td class="py-2.5 px-3 text-right text-emerald-400">${formatBRL(r.faturamento_bruto)}</td>
+            <td class="py-2.5 px-3 text-right text-slate-400">${formatBRL(r.meta)}</td>
+            <td class="py-2.5 px-3 text-center">
+              <span class="inline-block px-1.5 py-0.5 rounded text-[10px] ${r.atingimento_pct >= 100 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400'}">
+                ${r.atingimento_pct}%
+              </span>
+            </td>
+            <td class="py-2.5 px-3 text-center text-slate-300 font-sans">${r.novos_clientes}</td>
+            <td class="py-2.5 px-3 text-center text-cyan-400">${r.churn_rate_pct}%</td>
+          </tr>
+        `).join('');
+
+        document.getElementById('table-period-label').textContent = summary.periodo;
+        setStatus('online', apiBaseUrl ? 'AWS Cloud Live' : 'Modo Demonstração');
+
+      } catch (err) {
+        console.error("Erro ao buscar KPIs:", err);
+        setStatus('error', 'Falha na Conexão');
+      } finally {
+        if (icon) icon.classList.remove('animate-spin');
+      }
+    }
+
+    // Prompt Click Quick Action
+    function askPrompt(text) {
+      document.getElementById('chat-input').value = text;
+      handleSendChat(new Event('submit'));
+    }
+
+    // Clear Chat
+    function clearChat() {
+      currentSessionId = null;
+      const container = document.getElementById('chat-messages');
+      container.innerHTML = `
+        <div class="flex items-start space-x-3">
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex-shrink-0 flex items-center justify-center text-emerald-400 mt-0.5">
+            <i data-lucide="bot" class="w-4 h-4"></i>
+          </div>
+          <div class="space-y-1 max-w-[85%]">
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl rounded-tl-sm px-4 py-3 text-xs text-slate-200 leading-relaxed shadow">
+              Conversa reiniciada. Base de conhecimento pronta para novas consultas.
+            </div>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    // Append Message to UI
+    function appendMessage(role, text, citations = []) {
+      const container = document.getElementById('chat-messages');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = role === 'user' ? "flex items-start justify-end space-x-3" : "flex items-start space-x-3";
+
+      if (role === 'user') {
+        msgDiv.innerHTML = `
+          <div class="space-y-1 max-w-[85%] text-right">
+            <div class="bg-gradient-to-r from-emerald-600 to-cyan-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-xs font-medium leading-relaxed shadow-lg">
+              ${escapeHtml(text)}
+            </div>
+            <span class="text-[10px] text-slate-400 px-1">Você</span>
+          </div>
+          <div class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex-shrink-0 flex items-center justify-center text-slate-300 mt-0.5">
+            <i data-lucide="user" class="w-4 h-4"></i>
+          </div>
+        `;
+      } else {
+        let citationsHtml = "";
+        if (citations && citations.length > 0) {
+          citationsHtml = `
+            <div class="mt-2.5 pt-2 border-t border-slate-700/60 space-y-1.5">
+              <p class="text-[10px] font-semibold text-slate-400 flex items-center space-x-1">
+                <i data-lucide="file-text" class="w-3 h-3 text-cyan-400"></i>
+                <span>Fontes Citadas na Knowledge Base:</span>
+              </p>
+              ${citations.map(c => `
+                <div class="bg-slate-900/80 border border-slate-700/80 rounded-lg p-2 text-[10px] text-slate-300">
+                  <div class="flex items-center justify-between text-cyan-400 font-medium mb-0.5">
+                    <span>📄 ${escapeHtml(c.source_file || 'Documento')}</span>
+                  </div>
+                  <p class="text-slate-400 italic line-clamp-2">"${escapeHtml(c.snippet || '')}"</p>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        // Format markdown linebreaks and bullets
+        const formattedText = escapeHtml(text)
+          .replace(/\n\n/g, '<br><br>')
+          .replace(/\n- /g, '<br>• ')
+          .replace(/\n\d+\. /g, '<br>&nbsp;&nbsp;• ');
+
+        msgDiv.innerHTML = `
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex-shrink-0 flex items-center justify-center text-emerald-400 mt-0.5">
+            <i data-lucide="bot" class="w-4 h-4"></i>
+          </div>
+          <div class="space-y-1 max-w-[85%]">
+            <div class="bg-slate-800/90 border border-slate-700/70 rounded-2xl rounded-tl-sm px-4 py-3 text-xs text-slate-200 leading-relaxed shadow-lg">
+              ${formattedText}
+              ${citationsHtml}
+            </div>
+            <span class="text-[10px] text-slate-400 px-1">Amazon Bedrock (Nova Lite)</span>
+          </div>
+        `;
+      }
+
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+      lucide.createIcons();
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+
+    // Handle Chat Submit
+    async function handleSendChat(evt) {
+      evt.preventDefault();
+      const input = document.getElementById('chat-input');
+      const question = input.value.trim();
+      if (!question) return;
+
+      appendMessage('user', question);
+      input.value = '';
+
+      const typing = document.getElementById('chat-typing');
+      const sendBtn = document.getElementById('btn-send');
+      typing.classList.remove('hidden');
+      sendBtn.disabled = true;
+
+      try {
+        let answer = "";
+        let citations = [];
+
+        if (apiBaseUrl) {
+          const resp = await fetch(`${apiBaseUrl}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: question, session_id: currentSessionId })
+          });
+
+          if (!resp.ok) {
+            const errData = await resp.json().catch(() => ({}));
+            throw new Error(errData.message || `Erro HTTP ${resp.status}`);
+          }
+
+          const resJson = await resp.json();
+          answer = resJson.answer;
+          citations = resJson.citations || [];
+          if (resJson.session_id) currentSessionId = resJson.session_id;
+
+        } else {
+          // Local demo simulation
+          await new Promise(r => setTimeout(r, 1200));
+          answer = generateLocalDemoResponse(question);
+          citations = [{
+            source_file: "relatorio_estrategico_2026.txt",
+            snippet: "Descontos de até 10% podem ser concedidos pelo AE para contratos anuais. De 10.1% a 15% exigem Gerente Comercial. Acima de 20% exigem Comitê Executivo (CFO e VP)."
+          }];
+        }
+
+        appendMessage('assistant', answer, citations);
+
+      } catch (err) {
+        console.error("Erro no chat:", err);
+        appendMessage('assistant', `⚠️ Não foi possível obter a resposta do Bedrock: ${err.message}. Certifique-se de que o backend foi deployado e a URL configurada.`);
+      } finally {
+        typing.classList.add('hidden');
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    // Local Demo Dataset (loaded while no backend URL is set)
+    function getFallbackData() {
+      return {
+        summary: {
+          periodo: "Janeiro a Outubro de 2026",
+          faturamento_total_brl: 15460000.00,
+          meta_total_brl: 14350000.00,
+          atingimento_global_pct: 107.74,
+          total_novos_clientes: 569,
+          ticket_medio_brl: 27170.47,
+          churn_medio_pct: 1.18,
+          crescimento_acumulado_pct: 65.82
+        },
+        chart_data: {
+          labels: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro"],
+          faturamento: [1185000, 1240000, 1390000, 1425000, 1510000, 1630000, 1590000, 1720000, 1810000, 1965000],
+          meta: [1100000, 1150000, 1250000, 1300000, 1400000, 1500000, 1550000, 1600000, 1700000, 1800000]
+        },
+        rows: [
+          { mes_nome: "Janeiro", faturamento_bruto: 1185000, meta: 1100000, atingimento_pct: 107.73, novos_clientes: 42, churn_rate_pct: 1.25 },
+          { mes_nome: "Fevereiro", faturamento_bruto: 1240000, meta: 1150000, atingimento_pct: 107.83, novos_clientes: 45, churn_rate_pct: 1.18 },
+          { mes_nome: "Março", faturamento_bruto: 1390000, meta: 1250000, atingimento_pct: 111.20, novos_clientes: 53, churn_rate_pct: 1.40 },
+          { mes_nome: "Abril", faturamento_bruto: 1425000, meta: 1300000, atingimento_pct: 109.62, novos_clientes: 49, churn_rate_pct: 1.10 },
+          { mes_nome: "Maio", faturamento_bruto: 1510000, meta: 1400000, atingimento_pct: 107.86, novos_clientes: 56, churn_rate_pct: 1.32 },
+          { mes_nome: "Junho", faturamento_bruto: 1630000, meta: 1500000, atingimento_pct: 108.67, novos_clientes: 61, churn_rate_pct: 1.05 },
+          { mes_nome: "Julho", faturamento_bruto: 1590000, meta: 1550000, atingimento_pct: 102.58, novos_clientes: 54, churn_rate_pct: 1.45 },
+          { mes_nome: "Agosto", faturamento_bruto: 1720000, meta: 1600000, atingimento_pct: 107.50, novos_clientes: 65, churn_rate_pct: 1.12 },
+          { mes_nome: "Setembro", faturamento_bruto: 1810000, meta: 1700000, atingimento_pct: 106.47, novos_clientes: 68, churn_rate_pct: 0.98 },
+          { mes_nome: "Outubro", faturamento_bruto: 1965000, meta: 1800000, atingimento_pct: 109.17, novos_clientes: 73, churn_rate_pct: 0.92 }
+        ]
+      };
+    }
+
+    function generateLocalDemoResponse(q) {
+      const lower = q.toLowerCase();
+      if (lower.includes('desconto') || lower.includes('alçada')) {
+        return "De acordo com o Relatório Estratégico Corporativo 2026 (Seção 4), as alçadas para concessão de descontos são:\n" +
+               "- Até 10%: Aprovado diretamente pelo Executivo de Contas (AE) para contratos anuais;\n" +
+               "- De 10,1% a 15,0%: Exige aprovação formal do Gerente Comercial Regional via CRM;\n" +
+               "- De 15,1% a 20,0%: Exige validação do Diretor Comercial (Head of Sales) e contrato mínimo de 24 meses;\n" +
+               "- Acima de 20,0%: Exceção restrita que requer aprovação unânime do CFO e VP de Operações.";
+      } else if (lower.includes('faturamento') || lower.includes('meta')) {
+        return "Conforme os dados financeiros consolidados de 2026, o faturamento bruto acumulado de Janeiro a Outubro atingiu R$ 15.460.000,00, superando a meta de R$ 14.350.000,00 com 107,74% de atingimento. O mês com maior faturamento foi Outubro (R$ 1.965.000,00).";
+      } else if (lower.includes('rescis') || lower.includes('multa') || lower.includes('cancel')) {
+        return "Conforme as diretrizes contratuais (Seção 5), a rescisão antecipada exige aviso prévio formal com no mínimo 60 dias de antecedência. Para contratos anuais ou plurianuais rescindidos sem justa causa, aplica-se multa compensatória de 40% sobre o saldo residual do contrato.";
+      }
+      return "Com base na base corporativa da ApexCloud no Amazon Bedrock, seus dados de 2026 demonstram sólido crescimento (+65,8% de faturamento de Jan a Out) e retenção líder no setor B2B (churn de apenas 1,18%). Por favor, especifique se deseja detalhes sobre precificação, alçadas comerciais ou SLAs de suporte.";
+    }
+
+    // Initial Execution
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      fetchKpis();
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,124 @@
+name: "Deploy Enterprise RAG & BI Dashboard"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+      - "src/**"
+      - "data/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # Required for AWS OIDC authentication
+  contents: read    # Required to checkout the repository
+
+jobs:
+  deploy:
+    name: "Terraform Apply & Knowledge Base Ingestion"
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+          audience: sts.amazonaws.com
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+          terraform_wrapper: false # Preserves raw stdout for output parsing
+
+      - name: Terraform Format Check & Validate
+        run: |
+          cd terraform
+          terraform fmt -check -diff
+          terraform init
+          terraform validate
+
+      - name: Terraform Apply
+        id: apply
+        run: |
+          cd terraform
+          # Terraform apply provisions all resources and uploads data files (CSV/TXT) to S3 via aws_s3_object
+          terraform apply -auto-approve
+
+      - name: Extract Terraform Outputs & Generate Frontend Config
+        id: outputs
+        run: |
+          cd terraform
+          API_ENDPOINT=$(terraform output -raw api_endpoint)
+          FRONTEND_BUCKET=$(terraform output -raw frontend_bucket_name)
+          KB_ID=$(terraform output -raw knowledge_base_id)
+          DS_ID=$(terraform output -raw data_source_id)
+          WEBSITE_URL=$(terraform output -raw website_url)
+
+          echo "api_endpoint=${API_ENDPOINT}" >> $GITHUB_OUTPUT
+          echo "frontend_bucket=${FRONTEND_BUCKET}" >> $GITHUB_OUTPUT
+          echo "kb_id=${KB_ID}" >> $GITHUB_OUTPUT
+          echo "ds_id=${DS_ID}" >> $GITHUB_OUTPUT
+          echo "website_url=${WEBSITE_URL}" >> $GITHUB_OUTPUT
+
+          # Generate dynamic runtime configuration for static frontend
+          echo "window.APP_CONFIG = { apiEndpoint: '${API_ENDPOINT}' };" > ../src/frontend/config.js
+          echo "Generated config.js with API Endpoint: ${API_ENDPOINT}"
+
+      - name: Deploy Frontend Assets to S3 Static Website Bucket
+        run: |
+          FRONTEND_BUCKET="${{ steps.outputs.outputs.frontend_bucket }}"
+          echo "Uploading static web assets to s3://${FRONTEND_BUCKET}..."
+          
+          aws s3 cp src/frontend/index.html "s3://${FRONTEND_BUCKET}/index.html" \
+            --content-type "text/html" \
+            --cache-control "no-cache, no-store, must-revalidate"
+
+          aws s3 cp src/frontend/config.js "s3://${FRONTEND_BUCKET}/config.js" \
+            --content-type "application/javascript" \
+            --cache-control "no-cache, no-store, must-revalidate"
+
+          echo "Frontend assets deployed successfully."
+
+      - name: Start Bedrock Knowledge Base Ingestion Job
+        run: |
+          KB_ID="${{ steps.outputs.outputs.kb_id }}"
+          DS_ID="${{ steps.outputs.outputs.ds_id }}"
+          echo "Triggering ingestion job for Knowledge Base: ${KB_ID} (Data Source: ${DS_ID})..."
+
+          JOB_OUTPUT=$(aws bedrock-agent start-ingestion-job \
+            --knowledge-base-id "${KB_ID}" \
+            --data-source-id "${DS_ID}" \
+            --region us-east-2 \
+            --description "Automated CI/CD sync from GitHub Actions" \
+            --output json)
+
+          echo "Ingestion Job Response:"
+          echo "${JOB_OUTPUT}"
+          
+          INGESTION_ID=$(echo "${JOB_OUTPUT}" | grep -o '"ingestionJobId": "[^"]*' | cut -d'"' -f4 || echo "unknown")
+          echo "Ingestion Job ID: ${INGESTION_ID}"
+
+      - name: Deployment Summary
+        run: |
+          echo "### 🚀 Deploy Concluído com Sucesso!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Recurso | Detalhe / URL |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Frontend Dashboard** | [${{ steps.outputs.outputs.website_url }}](${{ steps.outputs.outputs.website_url }}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **API Gateway Endpoint** | \`${{ steps.outputs.outputs.api_endpoint }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Bedrock Knowledge Base ID** | \`${{ steps.outputs.outputs.kb_id }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Data Source ID** | \`${{ steps.outputs.outputs.ds_id }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Região AWS** | \`us-east-2\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Camada Vetorial** | \`Amazon S3 Vectors\` (FinOps Zero-Idle Cost) |" >> $GITHUB_STEP_SUMMARY
+

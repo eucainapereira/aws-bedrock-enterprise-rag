@@ -176,36 +176,13 @@ aws-bedrock-enterprise-rag/
    - `Amazon Nova Lite v1.0`
 3. **Terraform S3 State Bucket**: The bucket `aws-bedrock-enterprise-rag-tfstate-710280692169-us-east-2-an` must exist in `us-east-2`.
 
-### GitHub Actions OIDC Setup
+### GitHub Actions Authentication Setup
 
-1. In AWS IAM, configure GitHub as an OIDC Identity Provider:
-   - Provider URL: `https://token.actions.githubusercontent.com`
-   - Audience: `sts.amazonaws.com`
-2. Create an IAM Role for GitHub Actions (e.g., `GitHubActions-Terraform-BedrockRAG`) with a trust relationship matching:
-   ```json
-   {
-     "Version": "2012-10-17",
-     "Statement": [
-       {
-         "Effect": "Allow",
-         "Principal": {
-           "Federated": "arn:aws:iam::710280692169:oidc-provider/token.actions.githubusercontent.com"
-         },
-         "Action": "sts:AssumeRoleWithWebIdentity",
-         "Condition": {
-           "StringEquals": {
-             "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-           },
-           "StringLike": {
-             "token.actions.githubusercontent.com:sub": "repo:eucainapereira/aws-bedrock-enterprise-rag:*"
-           }
-         }
-       }
-     ]
-   }
-   ```
-3. In your GitHub repository, navigate to **Settings > Secrets and variables > Actions** and create the secret:
-   - `AWS_ROLE_ARN`: `arn:aws:iam::710280692169:role/<YOUR_OIDC_ROLE_NAME>`
+Configure the GitHub Actions runner authentication by navigating to **Settings > Secrets and variables > Actions** and setting the following secrets:
+
+- `AWS_ACCESS_KEY_ID`: Access Key ID generated for the IAM User `Github_Actions` (or CI/CD service identity)
+- `AWS_SECRET_ACCESS_KEY`: Corresponding Secret Access Key
+*(Optional: If adopting OIDC federated roles, configure `role-to-assume` via STS WebIdentity)*
 
 ### Automated CI/CD Deployment
 

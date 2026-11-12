@@ -96,7 +96,7 @@ resource "aws_iam_role_policy" "bedrock_kb" {
 
 # Resource-based policy attached to the S3 Vectors Vector Bucket
 resource "aws_s3vectors_vector_bucket_policy" "vector_policy" {
-  vector_bucket_arn = aws_s3vectors_vector_bucket.vector_bucket.arn
+  vector_bucket_arn = aws_s3vectors_vector_bucket.vector_bucket.vector_bucket_arn
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -119,8 +119,8 @@ resource "aws_s3vectors_vector_bucket_policy" "vector_policy" {
           "s3vectors:GetVectorBucket"
         ]
         Resource = [
-          aws_s3vectors_vector_bucket.vector_bucket.arn,
-          "${aws_s3vectors_vector_bucket.vector_bucket.arn}/*"
+          aws_s3vectors_vector_bucket.vector_bucket.vector_bucket_arn,
+          "${aws_s3vectors_vector_bucket.vector_bucket.vector_bucket_arn}/*"
         ]
       }
     ]

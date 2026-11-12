@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.10.0"
 
   # Remote State in existing S3 bucket with native S3 state locking
   backend "s3" {

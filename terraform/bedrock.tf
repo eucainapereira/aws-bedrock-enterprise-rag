@@ -6,11 +6,11 @@
 # 1. Amazon S3 Vectors: Vector Bucket & High-Performance Cosine Index
 # ------------------------------------------------------------------------------
 resource "aws_s3vectors_vector_bucket" "vector_bucket" {
-  vector_bucket_name = "${var.project_prefix}-vectors-${var.aws_account_id}"
+  vector_bucket_name = "bedrock-enterprise-rag-vectors-${var.aws_account_id}"
 }
 
 resource "aws_s3vectors_index" "vector_index" {
-  index_name         = "${var.project_prefix}-index"
+  index_name         = "bedrock-enterprise-rag-index"
   vector_bucket_name = aws_s3vectors_vector_bucket.vector_bucket.vector_bucket_name
 
   data_type       = "float32"

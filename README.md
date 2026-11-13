@@ -2,13 +2,17 @@
 
 [![AWS Bedrock](https://img.shields.io/badge/AWS-Bedrock%20Nova%20Lite-FF9900?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/bedrock/)
 [![Vector Store](https://img.shields.io/badge/Vector%20Store-Amazon%20S3%20Vectors-569A31?logo=amazons3&logoColor=white)](https://aws.amazon.com/s3/)
-[![Terraform](https://img.shields.io/badge/IaC-Terraform%20v1.9+-844FBA?logo=terraform&logoColor=white)](https://www.terraform.io/)
-[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions%20OIDC-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
+[![API Gateway](https://img.shields.io/badge/API-Amazon%20API%20Gateway%20v2-8C4FFF?logo=amazon-apigateway&logoColor=white)](https://aws.amazon.com/api-gateway/)
+[![AWS Lambda](https://img.shields.io/badge/Compute-AWS%20Lambda%20(Python%203.12)-FF9900?logo=awslambda&logoColor=white)](https://aws.amazon.com/lambda/)
+[![Terraform](https://img.shields.io/badge/IaC-Terraform%20v1.10+-844FBA?logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> **Project Description:** Enterprise Serverless RAG & Executive BI Dashboard on AWS powered by **Amazon Bedrock**, **Amazon S3 Vectors** (FinOps Zero-Idle Cost), **Amazon API Gateway (HTTP API v2)**, **AWS Lambda (Python 3.12)**, provisioned 100% via **Terraform** and **GitHub Actions CI/CD**.
 
 An enterprise-grade, cost-optimized, and fully serverless **Retrieval-Augmented Generation (RAG)** architecture coupled with an **Executive Business Intelligence (BI) KPI Dashboard**.
 
-Engineered on **Amazon Bedrock**, **Amazon S3 Vectors**, **AWS Lambda**, and **API Gateway (HTTP API v2)**, this platform eliminates the costly idle infrastructure fees associated with traditional vector databases while delivering sub-second semantic search over corporate policies and strategic datasets.
+Engineered on **Amazon Bedrock**, **Amazon S3 Vectors**, **Amazon API Gateway (HTTP API v2)**, and **AWS Lambda**, this platform exposes secure RESTful endpoints with native CORS management while eliminating the costly idle infrastructure fees associated with traditional vector databases—delivering sub-second semantic search over corporate policies and strategic datasets.
 
 ---
 
@@ -27,14 +31,19 @@ Engineered on **Amazon Bedrock**, **Amazon S3 Vectors**, **AWS Lambda**, and **A
 
 ## 🏛️ Architectural Overview
 
-The solution delivers two core capabilities in a unified, low-latency architecture:
+The solution is structured around three core serverless pillars in a unified, low-latency architecture:
 
-1. **Executive BI KPI Engine (`GET /kpis`)**:
+1. **Serverless API Gateway Layer (`Amazon API Gateway HTTP API v2`)**:
+   - Exposes RESTful HTTP routes (`GET /kpis` and `POST /chat`) with up to 70% lower latency and cost compared to REST API v1.
+   - Configured with native **CORS policies** (`GET`, `POST`, `OPTIONS`) and **AWS_PROXY (Payload Format v2.0)** integration directly into AWS Lambda.
+   - Automatically injects the provisioned API Gateway Invoke URL into the frontend runtime (`config.js`) during the GitHub Actions CI/CD pipeline.
+
+2. **Executive BI KPI Engine (`GET /kpis`)**:
    - Parses enterprise financial datasets (`data/kpis/faturamento_2026.csv`) stored securely in private Amazon S3 storage.
    - Computes year-to-date (YTD) revenue, target achievement rates, weighted average contract value (ACV/ticket), customer churn rates, and monthly time-series metrics.
    - Renders interactive Chart.js visualizations directly within a dark-mode Tailwind CSS dashboard.
 
-2. **Enterprise Conversational RAG Engine (`POST /chat`)**:
+3. **Enterprise Conversational RAG Engine (`POST /chat`)**:
    - Ingests strategic corporate guidelines, approval thresholds, commercial policies, and SLAs (`data/docs/relatorio_estrategico_2026.txt`) into an **Amazon Bedrock Knowledge Base**.
    - Generates high-density 1024-dimension embeddings via **Amazon Titan Text Embeddings v2**.
    - Indexes and performs cosine semantic searches natively in **Amazon S3 Vectors** without operating vector search servers.

@@ -15,6 +15,8 @@
 > **O Problema:** Usar IAs públicas expõe dados confidenciais da empresa, enquanto montar uma estrutura própria tradicional custa centenas de dólares por mês em servidores parados.
 > 
 > **A Solução:** Uma IA 100% serverless na AWS (Bedrock + S3 Vectors + Lambda) que mantém os dados isolados na conta da empresa e escala a zero, custando apenas centavos por mês.
+>
+> **Todos os documentos e números usados são fictícios.**
 
 Uma arquitetura corporativa, otimizada para custos (FinOps) e totalmente *serverless* de **Retrieval-Augmented Generation (RAG)** integrada a um **Dashboard Executivo de Business Intelligence (BI)**.
 

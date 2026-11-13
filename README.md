@@ -8,231 +8,226 @@
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **Project Description:** Enterprise Serverless RAG & Executive BI Dashboard on AWS powered by **Amazon Bedrock**, **Amazon S3 Vectors** (FinOps Zero-Idle Cost), **Amazon API Gateway (HTTP API v2)**, **AWS Lambda (Python 3.12)**, provisioned 100% via **Terraform** and **GitHub Actions CI/CD**.
+> **Descrição do Projeto:** Plataforma corporativa 100% Serverless de **IA Generativa (RAG)** e **Painel Executivo de BI (KPIs)** na AWS, construída com **Amazon Bedrock**, **Amazon S3 Vectors** (FinOps Zero-Idle Cost), **Amazon API Gateway (HTTP API v2)** e **AWS Lambda (Python 3.12)**, provisionada integralmente via **Terraform** e **GitHub Actions CI/CD**.
 
-An enterprise-grade, cost-optimized, and fully serverless **Retrieval-Augmented Generation (RAG)** architecture coupled with an **Executive Business Intelligence (BI) KPI Dashboard**.
+Uma arquitetura corporativa, otimizada para custos (FinOps) e totalmente *serverless* de **Retrieval-Augmented Generation (RAG)** integrada a um **Dashboard Executivo de Business Intelligence (BI)**.
 
-Engineered on **Amazon Bedrock**, **Amazon S3 Vectors**, **Amazon API Gateway (HTTP API v2)**, and **AWS Lambda**, this platform exposes secure RESTful endpoints with native CORS management while eliminating the costly idle infrastructure fees associated with traditional vector databases—delivering sub-second semantic search over corporate policies and strategic datasets.
-
----
-
-## 📑 Table of Contents
-
-- [Architectural Overview](#-architectural-overview)
-- [Architecture Diagram](#-architecture-diagram)
-- [FinOps Benchmark: S3 Vectors vs. Traditional SaaS](#-finops-benchmark-s3-vectors-vs-traditional-saas)
-- [Enterprise Security & Least Privilege Posture](#-enterprise-security--least-privilege-posture)
-- [Repository Structure](#-repository-structure)
-- [Step-by-Step Deployment Guide](#-step-by-step-deployment-guide)
-- [API Reference & Testing](#-api-reference--testing)
-- [Infrastructure Teardown](#-infrastructure-teardown)
+Projetada sobre **Amazon Bedrock**, **Amazon S3 Vectors**, **Amazon API Gateway (HTTP API v2)** e **AWS Lambda**, esta solução expõe endpoints RESTful seguros com gerenciamento nativo de CORS, eliminando os altos custos ociosos de bancos de dados vetoriais tradicionais e entregando busca semântica com latência inferior a um segundo sobre políticas corporativas e dados estratégicos.
 
 ---
 
-## 🏛️ Architectural Overview
+## 📑 Índice
 
-The solution is structured around three core serverless pillars in a unified, low-latency architecture:
-
-1. **Serverless API Gateway Layer (`Amazon API Gateway HTTP API v2`)**:
-   - Exposes RESTful HTTP routes (`GET /kpis` and `POST /chat`) with up to 70% lower latency and cost compared to REST API v1.
-   - Configured with native **CORS policies** (`GET`, `POST`, `OPTIONS`) and **AWS_PROXY (Payload Format v2.0)** integration directly into AWS Lambda.
-   - Automatically injects the provisioned API Gateway Invoke URL into the frontend runtime (`config.js`) during the GitHub Actions CI/CD pipeline.
-
-2. **Executive BI KPI Engine (`GET /kpis`)**:
-   - Parses enterprise financial datasets (`data/kpis/faturamento_2026.csv`) stored securely in private Amazon S3 storage.
-   - Computes year-to-date (YTD) revenue, target achievement rates, weighted average contract value (ACV/ticket), customer churn rates, and monthly time-series metrics.
-   - Renders interactive Chart.js visualizations directly within a dark-mode Tailwind CSS dashboard.
-
-3. **Enterprise Conversational RAG Engine (`POST /chat`)**:
-   - Ingests strategic corporate guidelines, approval thresholds, commercial policies, and SLAs (`data/docs/relatorio_estrategico_2026.txt`) into an **Amazon Bedrock Knowledge Base**.
-   - Generates high-density 1024-dimension embeddings via **Amazon Titan Text Embeddings v2**.
-   - Indexes and performs cosine semantic searches natively in **Amazon S3 Vectors** without operating vector search servers.
-   - Synthesizes precise, cited natural-language responses in Portuguese using **Amazon Nova Lite v1.0** (with fallback support for **Anthropic Claude 3.5 Haiku**).
+- [Visão Geral da Arquitetura](#-visão-geral-da-arquitetura)
+- [Diagrama de Arquitetura](#-diagrama-de-arquitetura)
+- [Benchmark FinOps: S3 Vectors vs. SaaS Tradicional](#-benchmark-finops-s3-vectors-vs-saas-tradicional)
+- [Segurança Corporativa & IAM Least Privilege](#-segurança-corporativa--iam-least-privilege)
+- [Estrutura do Repositório](#-estrutura-do-repositório)
+- [Guia de Deploy Passo a Passo](#-guia-de-deploy-passo-a-passo)
+- [Referência da API & Testes](#-referência-da-api--testes)
+- [Destruição da Infraestrutura (Teardown)](#-destruição-da-infraestrutura-teardown)
 
 ---
 
-## 📐 Architecture Diagram
+## 🏛️ Visão Geral da Arquitetura
+
+A solução é estruturada em três pilares *serverless* em uma arquitetura unificada e de baixa latência:
+
+1. **Camada de API Serverless (`Amazon API Gateway HTTP API v2`)**:
+   - Expõe rotas HTTP RESTful (`GET /kpis` e `POST /chat`) com até 70% menos latência e custo em comparação ao REST API v1 tradicional.
+   - Configurada com políticas nativas de **CORS** (`GET`, `POST`, `OPTIONS`) e integração **AWS_PROXY (Payload Format v2.0)** diretamente com o AWS Lambda.
+   - Injeta automaticamente a URL pública provisionada do API Gateway no runtime do frontend (`config.js`) durante a execução da esteira CI/CD no GitHub Actions.
+
+2. **Motor de KPIs e BI Executivo (`GET /kpis`)**:
+   - Processa bases financeiras corporativas (`data/kpis/faturamento_2026.csv`) armazenadas de forma segura em um bucket privado do Amazon S3.
+   - Calcula faturamento acumulado no ano (YTD), taxa de atingimento de metas, ticket médio ponderado (ACV), taxa de *churn* e séries temporais mensais.
+   - Renderiza visualizações interativas com Chart.js em um dashboard *dark mode* construído com Tailwind CSS.
+
+3. **Motor Conversacional RAG Corporativo (`POST /chat`)**:
+   - Realiza a ingestão de diretrizes estratégicas, alçadas de aprovação, políticas comerciais e SLAs (`data/docs/relatorio_estrategico_2026.txt`) em uma **Amazon Bedrock Knowledge Base**.
+   - Gera *embeddings* vetoriais densos de 1024 dimensões utilizando o modelo **Amazon Titan Text Embeddings v2**.
+   - Indexa e executa buscas semânticas por similaridade de cosseno nativamente no **Amazon S3 Vectors**, sem necessidade de manter servidores vetoriais provisionados.
+   - Sintetiza respostas precisas em português com citações auditáveis da fonte utilizando o **Amazon Nova Lite v1.0** (com fallback automático para **Anthropic Claude 3.5 Haiku**).
+
+---
+
+## 📐 Diagrama de Arquitetura
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Client Presentation Layer"]
-        User["Corporate Executive / Analyst"]
-        Web["Static S3 Dashboard (Dark Mode)"]
+    subgraph Client ["Camada de Apresentação (Cliente)"]
+        User["Executivo / Analista"]
+        Web["Dashboard Estático no S3 (Dark Mode)"]
     end
 
-    subgraph Ingestion ["Data Ingestion & Storage"]
-        CSV["KPI Datasets (CSV)"]
-        TXT["Strategic Documents (TXT)"]
-        S3Data["Private S3 Bucket\n(SSE-AES256, BPA Enabled)"]
+    subgraph Ingestion ["Ingestão & Armazenamento de Dados"]
+        CSV["Base de KPIs (CSV)"]
+        TXT["Documentos Estratégicos (TXT)"]
+        S3Data["Bucket S3 Privado\n(SSE-AES256, Block Public Access)"]
     end
 
-    subgraph VectorLayer ["Serverless Vector Layer"]
-        S3Vec["Amazon S3 Vectors\n(1024-dim, Cosine)"]
+    subgraph VectorLayer ["Camada Vetorial Serverless"]
+        S3Vec["Amazon S3 Vectors\n(1024-dim, Cosseno)"]
     end
 
     subgraph BedrockKB ["Amazon Bedrock Knowledge Base"]
-        Titan["Titan Embeddings v2\n(1024 Dimensions)"]
-        KB["Bedrock Knowledge Base Engine"]
-        DataSource["S3 Data Source (docs/ prefix)"]
+        Titan["Titan Embeddings v2\n(1024 Dimensões)"]
+        KB["Motor Bedrock Knowledge Base"]
+        DataSource["S3 Data Source (prefixo docs/)"]
     end
 
-    subgraph Backend ["Serverless API & Compute"]
-        APIGW["API Gateway (HTTP API v2)\nCORS Enabled"]
-        Lambda["AWS Lambda Backend\n(Python 3.12)"]
+    subgraph Backend ["API Serverless & Computação"]
+        APIGW["Amazon API Gateway (HTTP API v2)\nCORS Habilitado"]
+        Lambda["Backend AWS Lambda\n(Python 3.12)"]
         Nova["Amazon Nova Lite v1.0\n(Foundation Model)"]
     end
 
-    User -->|Accesses Dashboard| Web
+    User -->|Acessa o Dashboard| Web
     Web -->|GET /kpis| APIGW
     Web -->|POST /chat| APIGW
     
-    APIGW -->|Proxy Integration| Lambda
-    Lambda -->|Read kpis/ CSV| S3Data
+    APIGW -->|Integração AWS_PROXY| Lambda
+    Lambda -->|Lê CSV em kpis/| S3Data
     Lambda -->|Retrieve & Generate| KB
     
     CSV -->|Upload via Terraform| S3Data
     TXT -->|Upload via Terraform| S3Data
-    S3Data -->|Crawl & Ingest| DataSource
-    DataSource -->|Vectorize Text| Titan
-    Titan -->|Store Vectors| S3Vec
-    KB -->|Query Vectors| S3Vec
-    KB -->|Synthesize Response| Nova
-    Nova -->|Return Answer + Citations| Lambda
+    S3Data -->|Sincronização & Ingestão| DataSource
+    DataSource -->|Vetoriza Texto| Titan
+    Titan -->|Armazena Vetores| S3Vec
+    KB -->|Consulta Vetores| S3Vec
+    KB -->|Sintetiza Resposta| Nova
+    Nova -->|Retorna Resposta + Citações| Lambda
 ```
 
 ---
 
-## 💰 FinOps Benchmark: S3 Vectors vs. Traditional SaaS
+## 💰 Benchmark FinOps: S3 Vectors vs. SaaS Tradicional
 
-A primary challenge in enterprise GenAI adoption is the **idle cost floor** of vector database infrastructure. Conventional architectures rely on provisioned OpenSearch Serverless collections or third-party vector SaaS (Pinecone, Weaviate, Qdrant), which incur steep hourly cluster minimums regardless of query volume.
+Um dos maiores desafios na adoção corporativa de IA Generativa é o **custo mínimo ocioso (*idle cost*)** da infraestrutura de bancos de dados vetoriais. Arquiteturas convencionais dependem de coleções provisionadas do OpenSearch Serverless ou serviços SaaS de terceiros (Pinecone, Weaviate, Qdrant), que cobram taxas mínimas por hora independentemente do volume de consultas.
 
-By leveraging **Amazon S3 Vectors** and on-demand **Amazon Bedrock**, this architecture achieves a **near-zero (\$0.00) idle cost**:
+Ao combinar o **Amazon S3 Vectors** com o modelo sob demanda do **Amazon Bedrock**, esta arquitetura atinge um **custo ocioso próximo de zero (\$0,00)**:
 
-| Architecture Component | Traditional SaaS / Managed (e.g. OpenSearch / Pinecone) | This Solution (AWS Bedrock + S3 Vectors) | FinOps Advantage |
+| Componente da Arquitetura | SaaS Tradicional / Gerenciado (ex: OpenSearch / Pinecone) | Esta Solução (AWS Bedrock + S3 Vectors) | Vantagem FinOps |
 |---|---|---|---|
-| **Vector Storage & Search** | OpenSearch Serverless (minimum 4 OCUs) ≈ **\$700.00/mo** or Pinecone Starter ≈ **\$70.00+/mo** | Amazon S3 Vectors: Pay-per-vector storage + request-based pricing ≈ **\$0.05/mo** | **99.9% cost reduction** on vector infrastructure |
-| **Compute / API** | Provisioned ECS / EKS or EC2 Instance ≈ **\$45.00 - \$180.00/mo** | AWS Lambda + HTTP API v2: 1M free requests tier ≈ **\$0.00/mo** | **Zero compute cost** at baseline/development volume |
-| **Web Hosting** | Dedicated Web Server or App Service ≈ **\$20.00/mo** | S3 Static Website Hosting ≈ **<\$0.02/mo** | High durability with minimal static asset cost |
-| **LLM Inference** | Dedicated GPU instance (g5.xlarge) ≈ **\$730.00/mo** | Amazon Nova Lite: Pay-per-token input/output (\$0.06 / 1M input tokens) | **Zero cost** when no prompts are executed |
-| **Total Idle Cost** | **\$765.00 - \$1,600.00+ / month** | **<\$0.50 / month** | **Enterprise enterprise-grade capabilities with zero waste** |
+| **Armazenamento & Busca Vetorial** | OpenSearch Serverless (mínimo 4 OCUs) ≈ **\$700,00/mês** ou Pinecone Starter ≈ **\$70,00+/mês** | Amazon S3 Vectors: Custo por armazenamento + requisição ≈ **\$0,05/mês** | **99,9% de redução de custo** na camada vetorial |
+| **Computação / API** | Instância EC2 ou Cluster ECS / EKS provisionado ≈ **\$45,00 - \$180,00/mês** | AWS Lambda + API Gateway HTTP v2: Free Tier de 1M requisições ≈ **\$0,00/mês** | **Custo zero de computação** em volume inicial/portfólio |
+| **Hospedagem Web** | Servidor Web dedicado ou App Service ≈ **\$20,00/mês** | S3 Static Website Hosting ≈ **<\$0,02/mês** | Alta durabilidade com custo irrisório |
+| **Inferência LLM** | Instância GPU dedicada (`g5.xlarge`) ≈ **\$730,00/mês** | Amazon Nova Lite: Pagamento por token (\$0,06 / 1M tokens de entrada) | **Custo zero** quando não há perguntas em execução |
+| **Custo Total Ocioso (Idle)** | **\$765,00 - \$1.600,00+ / mês** | **<\$0,50 / mês** | **Capacidade corporativa com desperdício zero** |
 
 ---
 
-## 🛡️ Enterprise Security & Least Privilege Posture
+## 🛡️ Segurança Corporativa & IAM Least Privilege
 
-Security is designed around the AWS Well-Architected Framework and Zero-Trust principles:
+A postura de segurança foi desenhada seguindo o **AWS Well-Architected Framework** e princípios de **Privilégio Mínimo (Least Privilege)**:
 
-1. **GitHub Actions OpenID Connect (OIDC)**:
-   - Long-lived AWS access keys and secret keys are completely eliminated.
-   - The CI/CD runner requests short-lived STS credentials bound strictly to `repo:eucainapereira/aws-bedrock-enterprise-rag:ref:refs/heads/main`.
+1. **Roles IAM Estritamente Escopadas por Serviço**:
+   - **Role da Bedrock Knowledge Base**:
+     - Permissões `s3:GetObject` e `s3:ListBucket` restritas exclusivamente ao bucket privado de dados e ao prefixo `docs/`.
+     - Permissões `s3vectors:*Vectors` e `s3vectors:GetIndex` restritas exclusivamente ao *vector bucket* e índice dedicados do projeto.
+     - Permissão `bedrock:InvokeModel` concedida unicamente para o ARN do modelo Titan Embeddings v2 (`arn:aws:bedrock:us-east-2::foundation-model/amazon.titan-embed-text-v2:0`).
+   - **Role de Execução do AWS Lambda**:
+     - Escrita no CloudWatch Logs restrita ao grupo de logs `arn:aws:logs:us-east-2:710280692169:log-group:/aws/lambda/aws-bedrock-enterprise-rag-backend:*`.
+     - Leitura no Amazon S3 restrita exclusivamente ao caminho `arn:aws:s3:::aws-bedrock-enterprise-rag-data-710280692169/kpis/*`.
+     - Invocação do Bedrock restrita à Knowledge Base do projeto e aos modelos/perfis de inferência autorizados (`amazon.nova-lite-v1:0` e `anthropic.claude-3-5-haiku-20241022-v1:0`).
 
-2. **Strict Least-Privilege IAM Roles**:
-   - **Bedrock Knowledge Base Role**:
-     - Granted `s3:GetObject` and `s3:ListBucket` strictly on the private data bucket restricted to the `docs/` prefix.
-     - Granted `s3vectors:*Vectors` and `s3vectors:GetIndex` strictly on the dedicated vector bucket and index.
-     - Granted `bedrock:InvokeModel` solely on the Titan Embeddings v2 ARN (`arn:aws:bedrock:us-east-2::foundation-model/amazon.titan-embed-text-v2:0`).
-   - **Lambda Execution Role**:
-     - CloudWatch Logs writing permissions are strictly scoped to `arn:aws:logs:us-east-2:710280692169:log-group:/aws/lambda/aws-bedrock-enterprise-rag-backend:*`.
-     - S3 read permissions are strictly restricted to `arn:aws:s3:::aws-bedrock-enterprise-rag-data-710280692169/kpis/*`.
-     - Bedrock invocation is restricted to the specific Knowledge Base and authorized foundation models/inference profiles (`amazon.nova-lite-v1:0` and `anthropic.claude-3-5-haiku-20241022-v1:0`).
-
-3. **Storage Security & Public Access Block**:
-   - The corporate data bucket enforces **S3 Block Public Access** across all four flags (`block_public_acls`, `block_public_policy`, `ignore_public_acls`, `restrict_public_buckets`).
-   - Default server-side encryption is enforced with **AES256**.
-   - S3 Vectors vector bucket policy mandates identity authentication against the Bedrock KB execution role.
+2. **Segurança de Armazenamento & Bloqueio de Acesso Público**:
+   - O bucket de dados corporativos aplica o **S3 Block Public Access** nas quatro diretivas (`block_public_acls`, `block_public_policy`, `ignore_public_acls`, `restrict_public_buckets`).
+   - Criptografia padrão no lado do servidor habilitada com **AES256**.
+   - A política de recurso do *vector bucket* no S3 Vectors exige autenticação explícita da role de execução da Knowledge Base.
 
 ---
 
-## 📂 Repository Structure
+## 📂 Estrutura do Repositório
 
 ```text
 aws-bedrock-enterprise-rag/
 ├── .github/
 │   └── workflows/
-│       ├── deploy.yml            # CI/CD: Terraform Apply, S3 Sync, and Bedrock Ingestion
-│       └── destroy.yml           # Manual teardown workflow with safety confirmation
+│       ├── deploy.yml            # CI/CD: Terraform Apply, Sync S3 e Ingestão no Bedrock
+│       └── destroy.yml           # Workflow manual de teardown com trava de confirmação
 ├── data/
 │   ├── docs/
-│   │   └── relatorio_estrategico_2026.txt # Unstructured corporate policy and strategic report
+│   │   └── relatorio_estrategico_2026.txt # Relatório estratégico e política comercial corporativa
 │   └── kpis/
-│       └── faturamento_2026.csv           # Structured monthly financial & sales metrics (Jan-Oct 2026)
+│       └── faturamento_2026.csv           # Métricas financeiras e comerciais auditadas (Jan-Out 2026)
 ├── src/
 │   ├── frontend/
-│   │   ├── config.js             # Dynamic runtime API endpoint configuration
-│   │   └── index.html            # Dark-mode dashboard (Tailwind CSS, Chart.js, Lucide)
+│   │   ├── config.js             # Configuração dinâmica de runtime com endpoint do API Gateway
+│   │   └── index.html            # Dashboard Executivo Dark Mode (Tailwind CSS, Chart.js, Lucide)
 │   └── lambda/
-│       └── handler.py            # Clean Python 3.12 backend (boto3 + stdlib)
+│       └── handler.py            # Backend Serverless em Python 3.12 (boto3 + stdlib)
 ├── terraform/
-│   ├── bedrock.tf                # Bedrock KB, S3 Vectors Vector Bucket, Index, and Data Source
-│   ├── iam.tf                    # Scoped Least-Privilege IAM Roles & Bucket Policies
-│   ├── lambda_api.tf             # Lambda function, API Gateway HTTP API v2 & routes
-│   ├── outputs.tf                # API Gateway endpoint, website URL, and KB identifiers
-│   ├── providers.tf              # AWS provider and remote S3 backend with use_lockfile
-│   ├── s3.tf                     # Private data bucket, public frontend bucket, and object uploads
-│   └── variables.tf              # Parameter definitions (region, account ID, models)
-└── README.md                     # Architecture documentation & operational runbook
+│   ├── bedrock.tf                # Bedrock KB, S3 Vectors Bucket, Índice Cosseno e Data Source
+│   ├── iam.tf                    # IAM Roles com Least Privilege e Políticas de Bucket
+│   ├── lambda_api.tf             # Função Lambda, Amazon API Gateway HTTP API v2 e rotas
+│   ├── outputs.tf                # Outputs do endpoint do API Gateway, URL do site e IDs do Bedrock
+│   ├── providers.tf              # Provider AWS e backend S3 remoto com use_lockfile nativo
+│   ├── s3.tf                     # Bucket privado de dados, bucket público do frontend e uploads
+│   └── variables.tf              # Definições parametrizadas (região, conta AWS, modelos)
+└── README.md                     # Documentação de arquitetura e guia operacional
 ```
 
 ---
 
-## 🚀 Step-by-Step Deployment Guide
+## 🚀 Guia de Deploy Passo a Passo
 
-### Prerequisites
+### Pré-requisitos
 
-1. **AWS Account**: An active AWS account (`710280692169`) with permissions in region `us-east-2`.
-2. **Bedrock Model Access**: Ensure model access is enabled in the AWS Bedrock Console for:
+1. **Conta AWS**: Conta AWS ativa (`710280692169`) operando na região `us-east-2` (Ohio).
+2. **Acesso aos Modelos no Amazon Bedrock**: Certifique-se de que os seguintes modelos estejam habilitados no console do AWS Bedrock:
    - `Amazon Titan Text Embeddings V2`
    - `Amazon Nova Lite v1.0`
-3. **Terraform S3 State Bucket**: The bucket `aws-bedrock-enterprise-rag-tfstate-710280692169-us-east-2-an` must exist in `us-east-2`.
+3. **Bucket S3 para Estado do Terraform**: O bucket `aws-bedrock-enterprise-rag-tfstate-710280692169-us-east-2-an` deve existir na região `us-east-2`.
 
-### GitHub Actions Authentication Setup
+### Configuração de Secrets no GitHub Actions
 
-Configure the GitHub Actions runner authentication by navigating to **Settings > Secrets and variables > Actions** and setting the following secrets:
+Configure as credenciais da esteira navegando até **Settings > Secrets and variables > Actions** no repositório do GitHub e adicionando os seguintes *secrets*:
 
-- `AWS_ACCESS_KEY_ID`: Access Key ID generated for the IAM User `Github_Actions` (or CI/CD service identity)
-- `AWS_SECRET_ACCESS_KEY`: Corresponding Secret Access Key
-*(Optional: If adopting OIDC federated roles, configure `role-to-assume` via STS WebIdentity)*
+- `AWS_ACCESS_KEY_ID`: Access Key ID da identidade IAM de CI/CD
+- `AWS_SECRET_ACCESS_KEY`: Secret Access Key correspondente
 
-### Automated CI/CD Deployment
+### Deploy Automatizado via CI/CD
 
-Simply push to `main` or trigger the workflow manually:
+Basta realizar um `push` na branch `main` ou disparar manualmente:
 
-1. Go to the **Actions** tab on GitHub.
-2. Select **Deploy Enterprise RAG & BI Dashboard**.
-3. Click **Run workflow**.
+1. Acesse a aba **Actions** no GitHub.
+2. Selecione o workflow **Deploy Enterprise RAG & BI Dashboard**.
+3. Clique em **Run workflow**.
 
-The workflow automatically:
-- Formats and validates the Terraform configuration.
-- Executes `terraform apply -auto-approve` (creating all resources and uploading data files to S3).
-- Extracts output variables and generates `config.js` with the provisioned API Gateway endpoint.
-- Deploys `index.html` and `config.js` to the frontend S3 website bucket.
-- Triggers the Bedrock Knowledge Base synchronization via `aws bedrock-agent start-ingestion-job`.
-- Publishes the live public website URL in the **GitHub Step Summary**.
+A pipeline executa automaticamente:
+- Checagem de formatação (`terraform fmt -check`) e validação de sintaxe (`terraform validate`).
+- Provisionamento completo via `terraform apply -auto-approve` (criando todos os recursos e enviando os arquivos CSV/TXT para o S3).
+- Extração dos outputs do Terraform e geração automática do arquivo `config.js` com a URL do **Amazon API Gateway**.
+- Publicação do `index.html` e `config.js` no bucket S3 de hospedagem estática.
+- Disparo automático do job de sincronização e vetorização da Knowledge Base via `aws bedrock-agent start-ingestion-job`.
+- Geração do resumo executivo de deploy no **GitHub Step Summary**.
 
 ---
 
-## 📡 API Reference & Testing
+## 📡 Referência da API & Testes
 
-Once deployed, you can interact with the serverless backend via `curl`:
+Uma vez implantado, você pode testar os endpoints do **Amazon API Gateway** diretamente via `curl`:
 
-### 1. Retrieve Financial & Performance KPIs
+### 1. Consultar KPIs Financeiros e de Performance (`GET /kpis`)
 
 ```bash
 curl -X GET "https://<API_ENDPOINT>/kpis" \
   -H "Accept: application/json"
 ```
 
-**Example Response**:
+**Exemplo de Resposta**:
 ```json
 {
   "status": "success",
   "summary": {
     "periodo": "Janeiro a Outubro de 2026",
-    "faturamento_total_brl": 15460000.0,
+    "faturamento_total_brl": 15465000.0,
     "meta_total_brl": 14350000.0,
-    "atingimento_global_pct": 107.74,
-    "total_novos_clientes": 569,
-    "ticket_medio_brl": 27170.47,
+    "atingimento_global_pct": 107.77,
+    "total_novos_clientes": 566,
+    "ticket_medio_brl": 27323.32,
     "churn_medio_pct": 1.18,
     "crescimento_acumulado_pct": 65.82
   },
@@ -244,7 +239,7 @@ curl -X GET "https://<API_ENDPOINT>/kpis" \
 }
 ```
 
-### 2. Conversational RAG Query with Knowledge Base Citations
+### 2. Consulta Conversacional RAG com Citações (`POST /chat`)
 
 ```bash
 curl -X POST "https://<API_ENDPOINT>/chat" \
@@ -254,7 +249,7 @@ curl -X POST "https://<API_ENDPOINT>/chat" \
   }'
 ```
 
-**Example Response**:
+**Exemplo de Resposta**:
 ```json
 {
   "status": "success",
@@ -272,17 +267,17 @@ curl -X POST "https://<API_ENDPOINT>/chat" \
 
 ---
 
-## 🧹 Infrastructure Teardown
+## 🧹 Destruição da Infraestrutura (Teardown)
 
-To avoid unintended AWS charges, a dedicated automated destruction workflow is included:
+Para remover todos os recursos provisionados na AWS de forma segura e automatizada:
 
-1. Navigate to the **Actions** tab on GitHub.
-2. Select **Destroy Enterprise Infrastructure**.
-3. Click **Run workflow**, type `DESTROY` in the safety confirmation input, and submit.
-4. The workflow will run `terraform destroy -auto-approve`, completely removing the Bedrock Knowledge Base, S3 Vectors bucket, Lambda function, API Gateway, and S3 data/website buckets.
+1. Acesse a aba **Actions** no GitHub.
+2. Selecione o workflow **Destroy Enterprise Infrastructure**.
+3. Clique em **Run workflow**, digite `DESTROY` no campo de confirmação de segurança e execute.
+4. O workflow executará `terraform destroy -auto-approve`, removendo integralmente a Knowledge Base do Bedrock, o bucket do S3 Vectors, a função Lambda, o API Gateway e os buckets S3 de dados e frontend.
 
 ---
 
-## 📄 License
+## 📄 Licença
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+Este projeto está licenciado sob a Licença MIT — consulte o arquivo [LICENSE](LICENSE) para mais detalhes.

@@ -9,6 +9,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Descrição do Projeto:** Plataforma corporativa 100% Serverless de **IA Generativa (RAG)** e **Painel Executivo de BI (KPIs)** na AWS, construída com **Amazon Bedrock**, **Amazon S3 Vectors** (FinOps Zero-Idle Cost), **Amazon API Gateway (HTTP API v2)** e **AWS Lambda (Python 3.12)**, provisionada integralmente via **Terraform** e **GitHub Actions CI/CD**.
+>
+> **Uma IA que lê os documentos e o faturamento internos para responder perguntas da equipe com privacidade total (sem mandar dados para fora) e custo de centavos por mês.**
+> 
+> **O Problema:** Usar IAs públicas expõe dados confidenciais da empresa, enquanto montar uma estrutura própria tradicional custa centenas de dólares por mês em servidores parados.
+> 
+> **A Solução:** Uma IA 100% serverless na AWS (Bedrock + S3 Vectors + Lambda) que mantém os dados isolados na conta da empresa e escala a zero, custando apenas centavos por mês.
 
 Uma arquitetura corporativa, otimizada para custos (FinOps) e totalmente *serverless* de **Retrieval-Augmented Generation (RAG)** integrada a um **Dashboard Executivo de Business Intelligence (BI)**.
 
@@ -266,18 +272,6 @@ curl -X POST "https://<API_ENDPOINT>/chat" \
 ```
 
 ---
-
-## 🧹 Destruição da Infraestrutura (Teardown)
-
-Para remover todos os recursos provisionados na AWS de forma segura e automatizada:
-
-1. Acesse a aba **Actions** no GitHub.
-2. Selecione o workflow **Destroy Enterprise Infrastructure**.
-3. Clique em **Run workflow**, digite `DESTROY` no campo de confirmação de segurança e execute.
-4. O workflow executará `terraform destroy -auto-approve`, removendo integralmente a Knowledge Base do Bedrock, o bucket do S3 Vectors, a função Lambda, o API Gateway e os buckets S3 de dados e frontend.
-
----
-
 ## 📄 Licença
 
 Este projeto está licenciado sob a Licença MIT — consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
